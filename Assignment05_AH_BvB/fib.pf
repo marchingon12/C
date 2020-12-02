@@ -1,0 +1,20 @@
+﻿
+# calculates the n-th fibonacci number and prints it on the output
+fib: (n :Int){
+    fn-1: 1 !
+    fn-2: 1 !
+    fn: 1 !
+    {
+        {n 0 <=} {"n too small" println}
+        {n 2 <=} {fn println}
+        {true}{
+            {
+                n 2 <= { fn println break} if 
+                fn: fn-1 fn-2 + !
+                fn-1 fn-2!
+                fn fn-1!
+                n 1 - n!
+            }loop
+        }
+    }cond 
+}fun
