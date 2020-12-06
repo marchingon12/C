@@ -1,4 +1,8 @@
 /*
+August Ho und Benjamin von Behren
+Assignment 07
+Aufgabe 4: Volumengeometrischer Körper
+
 Compile: make volume
 Run: ./volume
 make volume && ./volume
@@ -66,21 +70,44 @@ GeomObject make_cuboid(double a, double b, double c) {
 double volume(GeomObject o);
 
 void volume_test(void) {
+	printf("Expected value: %f\n", 4 /3.0 * M_PI * 2 * 2 * 2);
     test_within_d(volume(make_sphere(2)), 4 /3.0 * M_PI * 2 * 2 * 2, 1e-6);
+	printf("Expected value: %f\n", 2.0 * 3 * 4);
     test_within_d(volume(make_cuboid(2, 3, 4)), 2 * 3 * 4, 1e-6);
+	printf("Expected value: %f\n", 4.0 * M_PI * 3 * 3);
     test_within_d(volume(make_cylinder(3, 4)), 4 * M_PI * 3 * 3 , 1e-6);
 }
 
 // GeomObject -> double
 // Computes the surface area of the given object.
 double volume(GeomObject o) {
-	int n = o.tag;
-	switch(n){
-		case 0 : return M_PI * pow(o.TCylinder.r,2) * o.TCylinder.h ;
-		case 1 : return 4 / 3.0 * M_PI * pow(o.TSphere.r,3);
-		default : return o.TCuboid.a * o.TCuboid.b * o.TCuboid.c ;
+	double volume;
+	//Precondition
+	require("validTag", o.tag == TCylinder || o.tag == TSphere || o.tag == TCuboid);
+	switch (o.tag) {
+		case TCylinder :
+			volume = M_PI * pow(o.TCylinder.r, 2.0) * o.TCylinder.h;
+			//printf("%f\n", volume);
+			//Postconditions
+			ensure("correct result", fabs(o.TCylinder.r - pow(volume / (M_PI * o.TCylinder.h), 1 / 2.0)) < 1e-6);
+			ensure("correct result", fabs(o.TCylinder.h - volume / (M_PI * pow(o.TCylinder.r, 2.0))) < 1e-6);
+			break;
+		case TSphere :
+			volume =  4.0 / 3.0 * M_PI * pow(o.TSphere.r, 3.0);
+			//printf("%f\n", volume);
+			//Postconditions
+			ensure("correct result", fabs(o.TSphere.r - pow(3.0 / 4.0 * volume / M_PI, 1 / 3.0)) < 1e-6);
+			break;
+		case TCuboid :
+			volume = o.TCuboid.a * o.TCuboid.b * o.TCuboid.c;
+			//printf("%f\n", volume);
+			//Postconditions
+			ensure("correct result for a", fabs(o.TCuboid.a - volume / (o.TCuboid.b * o.TCuboid.c)) < 1e-6);
+			ensure("correct result for b", fabs(o.TCuboid.b - volume / (o.TCuboid.a * o.TCuboid.c)) < 1e-6);
+			ensure("correct result for c", fabs(o.TCuboid.c - volume / (o.TCuboid.a * o.TCuboid.b)) < 1e-6);
+			break;
 	}
-	return 0.0;
+	return volume;
 }
 
 int main(void) {
@@ -90,7 +117,9 @@ int main(void) {
 
 //todo: d)
 /*
-Tag ist dafür da
+Tag ist dafür da zu wissen, um welche Struktur es sich handelt.
 
-In Zeile 10 is Tag als
+Tag wird benuzt in struct GeomObject, um zu makieren um welche Objekt es sich handelt.
+Außerdem wird es in volume benutzt, um zu wissen welche Objekt es sich handelt.
+
  */
