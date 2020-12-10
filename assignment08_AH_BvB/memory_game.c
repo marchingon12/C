@@ -73,11 +73,10 @@ void init_cards(Board *b) {
     require_not_null(b);
     // b) todo: implement
     // access to board elements: b->ncards, b->cards[i], b->rows, b->cols
-	int i = 0;	//i is a counter
+	int i = 0, j;	//i is a counter, j is the number of cards
 	//cards are initialized with a char starting with 'A'
-	for (int j = 0; j < b->ncards; j+=2) {
-		b->cards[j + 1] = 'A' + i;
-		b->cards[j] = b->cards[j + 1];
+	for (j = 0; j < b->ncards; j+=2) {
+		b->cards[j] = (b->cards[j + 1] = 'A' + i);
 		i++;
 	}
 	printf("%s\n", b->cards);
@@ -85,7 +84,7 @@ void init_cards(Board *b) {
 	shuffle(b->cards, b->ncards);
 	printf("%s\n", b->cards);
 	//cards are hidden
-	for (int j = 0; j <= b->ncards; j++) {
+	for (j = 0; j <= b->ncards; j++) {
 		b->cards[j] = -b->cards[j];
 	}
 }
@@ -260,7 +259,7 @@ void do_move(Board *b) { // g) todo: explain
 	//get characters of both cards
     char card1 = get(b, r1, c1);
     char card2 = get(b, r2, c2);
-	//if card is not hidden and is not an empty space, then raise error and exit
+	//if card is not hidden or an empty space, then raise error and exit
     assert("valid cards", card1 > 0 && card2 > 0 && card1 != ' ' && card2 != ' ');
 	//if chars of both cards are the same, count a point
 	if (card1 == card2) {
