@@ -1,4 +1,6 @@
 /*
+August Ho & Benjamin von Behren
+
 Compile: make memory_game
 Run: ./memory_game 2 3
 Compile & run: make memory_game && ./memory_game 2 3
@@ -45,6 +47,11 @@ void shuffle(char *a, int n) {
     require_not_null(a);
     require("not negative", n >= 0);
     // a) todo: explain
+	/*
+	Die Funktion shuffle nimmt ein Character pointer a und die Länge des Arrays als Input.
+	Es wird von Länge - 1 bis 0 geloopt und die jeweilige Karte wird mit einer zufälligen anderen bzw. sich selbst vertauscht.
+	Ja, weil eine random int immer neu intialisiert nach jede loop wird, und somit keine Verstauschung wahrscheinlicher ist.
+	 */
     for (int i = n - 1; i > 0; i--) {
         assert("in range", 1 <= i && i <= n - 1);
         int r = uniform(i + 1); // random number in interval [0,i]
@@ -57,15 +64,30 @@ void shuffle(char *a, int n) {
 
 // Initializes the board with shuffled cards. Empty places are represented as ' '.
 // Open cards are represented as the respective character, e.g., 'A'.
-// Backsides of cards are represented as negative characters, e.g., -'A'. 
-// The cards are initially with their backside up (negative). 
-// This function onnly initializes the elements of the cards array. It assumes 
-// that cards points to an existing array and that ncards, rows, cols, points, 
+// Backsides of cards are represented as negative characters, e.g., -'A'.
+// The cards are initially with their backside up (negative).
+// This function onnly initializes the elements of the cards array. It assumes
+// that cards points to an existing array and that ncards, rows, cols, points,
 // and turns have already been set.
 void init_cards(Board *b) {
     require_not_null(b);
     // b) todo: implement
     // access to board elements: b->ncards, b->cards[i], b->rows, b->cols
+	int i = 0;	//i is a counter
+	//cards are initialized with a char starting with 'A'
+	for (int j = 0; j < b->ncards; j+=2) {
+		b->cards[j + 1] = 'A' + i;
+		b->cards[j] = b->cards[j + 1];
+		i++;
+	}
+	printf("%s\n", b->cards);
+	//cards are shuffled and printed
+	shuffle(b->cards, b->ncards);
+	printf("%s\n", b->cards);
+	//cards are hidden
+	for (int j = 0; j <= b->ncards; j++) {
+		b->cards[j] = -b->cards[j];
+	}
 }
 
 // Prints the board. Hidden cards are shown as '#'. The following shows an output example:
@@ -81,6 +103,44 @@ void print_board(Board *b) {
     require_not_null(b);
     // c) todo: implement
     // access to board elements: b->ncards, b->cards[i], b->rows, b->cols
+	//j for rows; + 1 row at the end to print points and turns
+	for (int j = 0; j <= b->rows + 1; j++){
+		//i for columns
+		for (int i = 0; i <= b->cols ; i++){
+			//if row number = 0
+			if (j == 0){
+				//if column number = 0 of column 0
+				if (i == 0){
+					prints(" ");	// _1_2_3, '_' = spaces
+				}else{
+					printf(" %d", i);	//print column numbers
+				}
+			//if reached end of b->rows then add 1 more row
+			}else if (j == b->rows + 1){
+				//print number of points and turns taken
+				printf("%d Points, %d turns", b->points, b->turns);
+				break;
+			//if row number is >= 1
+			}else{
+				//column numbers = 0
+				if (i == 0){
+					//print row numbers
+					printi(j);
+				}else{
+					char cardNum = b->cards[i - 1 + b->cols * (j - 1)];
+					//if negative card then print as hidden ('#') with space in front.
+					if (cardNum <= 0){
+						prints(" #");
+					//if positive card then print the corresponding card character with a space in front.
+					}else{
+						printf(" %c", cardNum);
+					}
+				}
+			}
+		}
+		//after end of each row print line break
+		printf("\n");
+	}
 }
 
 // Returns the array index for row r and column c. Stops the program if r or c are not valid.
@@ -89,23 +149,33 @@ int array_index(Board *b, int r, int c) {
     require("valid position", 0 <= r && r < b->rows && 0 <= c && c < b->cols);
     // d) todo: implement
     // access to board elements: b->rows, b->cols
-    return 0;
+	if (r > b->rows - 1 || r < 0 || c > b->cols || c < 0){
+		exit(1);
+	}
+	int i = r * b->cols + c;
+	return i;
 }
 
 // Gets value at row r, column c. Stops the program if r or c are not valid.
 char get(Board *b, int r, int c) {
     // e) todo: implement
-    return '#';
+	int i = array_index(b, r, c);
+	return s_get(b->cards, i);
 }
 
 // Sets value at row r, column c to x. Stops the program if r or c are not valid.
 void set(Board *b, int r, int c, char x) {
     // e) todo: implement
+	int i = array_index(b, r, c);
+	s_set(b->cards, i, x) ;
 }
 
 // Turns over card in row r, column c. Stops the program if r or c are not valid.
 void turn(Board *b, int r, int c) {
     // e) todo: implement
+	//get reverse of selected card (negate) and set new values
+	char ch = - get(b, r, c);
+	set(b, r, c, ch);
 }
 
 // Prints a prompt to wait and wait for return key.
@@ -140,26 +210,43 @@ bool input_coords(/*IN*/Board *b, /*OUT*/int *row, /*OUT*/int *col) {
 int clamp(int x, int low, int high) {
     require("valid interval", low <= high);
     // f) todo: implement
+	//if x is smaller than value low, set x as low value.
+	if (x < low){
+		x = low;
+	//else if x is larger than value high, set x as high value.
+	}else if (x > high){
+		x = high;
+	}
+	//if x = low or = high or between low and high
+	//then return value x without any changes
     ensure("valid result", low <= x && x <= high);
     return x;
 }
 
-// Does a single move. It consists of turning over two cards. If they are equal, 
-// they get removed from the board and a point for the collected pair is given 
+// Does a single move. It consists of turning over two cards. If they are equal,
+// they get removed from the board and a point for the collected pair is given
 // to the player. Otherwise, they are turned over again (backside up).
 // The input format is: 12<return> to open a card in row 0, column 1.
 void do_move(Board *b) { // g) todo: explain
+
+	//select the first card
+	prints("> ");
     require_not_null(b);
     int r1, c1;
+	//check if input coordinates are valid or not else illeagla move
     while (!input_coords(b, &r1, &c1)) {
         printf("Illegal move.\n");
     }
-    turn(b, r1, c1);
-    b->turns++;
-    clear_screen();
-    print_board(b);
+    turn(b, r1, c1);	//turn the card from hidden to shown
+    b->turns++;			//count a turn
+    clear_screen();		//clear the previous board
+    print_board(b);		//print new board with updated info
+	prints("> ");
 
+	//select the second card and a turn is counted
     int r2, c2;
+	//check if input coordinates are valid and
+	//position of first and second card are not the same, else illegal move
     while (!input_coords(b, &r2, &c2) || (r1 == r2 && c1 == c2)) {
         printf("Illegal move.\n");
     }
@@ -167,15 +254,20 @@ void do_move(Board *b) { // g) todo: explain
     b->turns++;
     clear_screen();
     print_board(b);
+	prints("> ");
 
     prompt();
+	//get characters of both cards
     char card1 = get(b, r1, c1);
     char card2 = get(b, r2, c2);
+	//if card is not hidden and is not an empty space, then raise error and exit
     assert("valid cards", card1 > 0 && card2 > 0 && card1 != ' ' && card2 != ' ');
-    if (card1 == card2) {
+	//if chars of both cards are the same, count a point
+	if (card1 == card2) {
         b->points++;
-        set(b, r1, c1, ' ');
-        set(b, r2, c2, ' ');
+        set(b, r1, c1, ' ');	//char of first card seen as "deleted"
+        set(b, r2, c2, ' ');	//char of second card seen as "deleted"
+	//else reset (set cards as hidden)
     } else {
         turn(b, r1, c1);
         turn(b, r2, c2);
@@ -193,12 +285,12 @@ void tests(void) {
     test_equal_i(clamp(3, 2, 4), 3);
     test_equal_i(clamp(4, 2, 4), 4);
     test_equal_i(clamp(5, 2, 4), 4);
-    
+
     // test with a 3x4 board (3 rows, 4 columns)
     char a[3*4];
     Board b = { a, 12, 3, 4, 10, 20 };
     init_cards(&b);
-    
+
     print_board(&b); // ensure that output is equal to testsout1_want.txt
 
     test_equal_i(array_index(&b, 0, 0), 0);
@@ -233,7 +325,7 @@ void tests(void) {
     set(&b, 0, 2, '2');
     set(&b, 1, 0, '3');
     set(&b, 2, 1, '4');
-    
+
     test_equal_i(get(&b, 0, 0), '1');
     test_equal_i(get(&b, 0, 2), '2');
     test_equal_i(get(&b, 1, 0), '3');
@@ -245,19 +337,19 @@ void tests(void) {
 // Entry point with command line arguments.
 int main(int argc, String argv[]) {
     if (argc != 3) {
-        printf("Usage: memory_game <rows> <cols>\n");
-        printf("Example: memory_game 2 3\n");
+        printf("Usage: ./memory_game <rows> <cols>\n");
+        printf("Example: ./memory_game 2 3\n");
         exit(1);
     }
-    
-    tests(); 
+
+    tests();
     prompt();
-    
+
     seed_uniform(time(NULL));
     Board b;
     b.rows = clamp(atoi(argv[1]), 2, 9); // atoi converts strings to integers (if possible)
     b.cols = clamp(atoi(argv[2]), 2, 9);
-    printf("creating a memory board with %d rows and %d cols\n", b.rows, b.cols); 
+    printf("creating a memory board with %d rows and %d cols\n", b.rows, b.cols);
     int pairs = b.rows * b.cols / 2;
     printf("%d pairs\n", pairs);
     b.ncards = 2 * pairs;
@@ -273,7 +365,7 @@ int main(int argc, String argv[]) {
     while (2 * b.points < b.ncards) {
         do_move(&b);
     }
-    
+
     return 0;
 }
 
@@ -355,24 +447,24 @@ press <return> to continue
 
   1 2 3
 1 #   #
-2      
+2
 2 points, 8 turns
 11
 
   1 2 3
 1 B   #
-2      
+2
 2 points, 9 turns
 13
 
   1 2 3
 1 B   B
-2      
+2
 2 points, 10 turns
 press <return> to continue
 
   1 2 3
-1      
-2      
+1
+2
 3 points, 10 turns
 */
