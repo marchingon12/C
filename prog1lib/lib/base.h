@@ -264,6 +264,22 @@ if (pointer == NULL) {\
 }
 #endif
 
+/**
+Allows writing code that is meant for use in an assertion. The code is removed if NO_ASSERT is defined.
+
+Example:
+@code{.c}
+    assert_code(int old_x = x); // save old value for assertion
+    x = x + 1;
+    assert("incremented", x == old_x + 1); // check whether new value is as expected
+@endcode
+*/
+#ifdef NO_ASSERT
+#define assert_code(x)
+#else
+#define assert_code(x) x
+#endif
+
 
 
 #ifdef NO_REQUIRE
@@ -490,25 +506,59 @@ if (pointer == NULL) {\
 }
 #endif
 
+/**
+Checks whether the given condition is true for all steps of an iteration. Primarily for use in assertions, preconditions, and postconditions.
+@param[in] i name of iteration variable
+@param[in] length number of iteration steps, i in [0, length)
+@param[in] condition boolean expression to check for each iteration step
+@return true if the condition is true for all steps of the iteration, false otherwise
 
+Example: Checking whether an array is sorted:
+@code{.c}
+    bool is_sorted = forall(k, arr_length - 1, arr[k] <= arr[k+1]);
+@endcode
+ */
+#define forall(i, length, condition) ({\
+   bool _forall_result = true;\
+   for (int i = 0; i < length; i++) { if (!(condition)) { _forall_result = false; break; } }\
+   _forall_result;\
+})
 
 /**
 Checks whether the given condition is true for all steps of an iteration. Primarily for use in assertions, preconditions, and postconditions.
 @param[in] init initialization expression
 @param[in] has_more_steps boolean expression for continuing the iteration
 @param[in] do_step advance the iteration state
-@param[in] condition boolean expression
+@param[in] condition boolean expression to check for each iteration step
 @return true if the condition is true for all steps of the iteration, false otherwise
 
 Example: Checking whether an array is sorted:
 @code{.c}
-    bool is_sorted = forall(int i = 0, i < arr_length - 1, i++, arr[i] <= arr[i+1]);
+    bool is_sorted = forall_x(int i = 0, i < arr_length - 1, i++, arr[i] <= arr[i+1]);
 @endcode
  */
-#define forall(init, has_more_steps, do_step, condition) ({\
-   bool result = true;\
-   for (init; has_more_steps; do_step) { if (!(condition)) { result = false; break; } }\
-   result;\
+#define forall_x(init, has_more_steps, do_step, condition) ({\
+   bool _forall_result = true;\
+   for (init; has_more_steps; do_step) { if (!(condition)) { _forall_result = false; break; } }\
+   _forall_result;\
+})
+
+/**
+Checks whether the given condition is true for at least one step of an iteration. Primarily for use in assertions, preconditions, and postconditions.
+@param[in] i name of iteration variable
+@param[in] length number of iteration steps, i in [0, length)
+@param[in] condition boolean expression to check for each iteration step
+@return true if the condition is true for at least one step of the iteration, false otherwise
+
+Example: Checking whether an array contains negative elements:
+@code{.c}
+    bool has_negative_elements = exists(k, arr_length, arr[k] < 0);
+@endcode
+ */
+#define exists(i, length, condition) ({\
+   bool _exists_result = false;\
+   for (int i = 0; i < length; i++) { if (condition) { _exists_result = true; break; } }\
+   _exists_result;\
 })
 
 /**
@@ -516,18 +566,18 @@ Checks whether the given condition is true for at least one step of an iteration
 @param[in] init initialization expression
 @param[in] has_more_steps boolean expression for continuing the iteration
 @param[in] do_step advance the iteration state
-@param[in] condition boolean expression
+@param[in] condition boolean expression to check for each iteration step
 @return true if the condition is true for at least one step of the iteration, false otherwise
 
 Example: Checking whether an array contains negative elements:
 @code{.c}
-    bool has_negative_elements = exists(int i = 0, i < arr_length, i++, arr[i] < 0);
+    bool has_negative_elements = exists_x(int i = 0, i < arr_length, i++, arr[i] < 0);
 @endcode
  */
-#define exists(init, has_more_steps, do_step, condition) ({\
-   bool result = false;\
-   for (init; has_more_steps; do_step) { if (condition) { result = true; break; } }\
-   result;\
+#define exists_x(init, has_more_steps, do_step, condition) ({\
+   bool _exists_result = false;\
+   for (init; has_more_steps; do_step) { if (condition) { _exists_result = true; break; } }\
+   _exists_result;\
 })
 
 /**
@@ -544,9 +594,9 @@ Example: Count the number of non-zero array elements:
 @endcode
  */
 #define countif(init, has_more_steps, do_step, condition) ({\
-   int result = 0;\
-   for (init; has_more_steps; do_step) { if (condition) { result++; } }\
-   result;\
+   int _countif_result = 0;\
+   for (init; has_more_steps; do_step) { if (condition) { _countif_result++; } }\
+   _countif_result;\
 })
 
 

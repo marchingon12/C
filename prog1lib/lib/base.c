@@ -687,7 +687,7 @@ bool base_test_equal_c(const char *file, int line, char a, char e) {
 bool base_test_equal_s(const char *file, int line, String a, String e) {
     base_init();
     base_check_count++;
-    if (strcmp(a, e) == 0) {
+    if ((a != NULL && e != NULL && strcmp(a, e) == 0) || (a == NULL && e == NULL)) {
         printf("%s, line %d: Test passed.\n", file, line);
         base_check_success_count++;
         return true;
